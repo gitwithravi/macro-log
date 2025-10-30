@@ -25,6 +25,7 @@ export default function HistoryPage() {
 
   useEffect(() => {
     fetchEntries();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDate, dateRange]);
 
   const fetchEntries = async () => {

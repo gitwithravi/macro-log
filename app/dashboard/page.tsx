@@ -25,6 +25,7 @@ export default function DashboardPage() {
   useEffect(() => {
     fetchProfile();
     fetchEntries();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchProfile = async () => {
@@ -251,7 +252,7 @@ export default function DashboardPage() {
             {/* Entries List */}
             <div>
               <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-                Today's Meals
+                Today&apos;s Meals
               </h2>
               {fetchingEntries ? (
                 <div className="text-center py-8">
