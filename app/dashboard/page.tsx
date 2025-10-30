@@ -8,6 +8,7 @@ import { EntryCard } from "@/components/entry-card";
 import { DailySummary } from "@/components/daily-summary";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { sanitizeInput } from "@/lib/utils/input-sanitizer";
 
 export default function DashboardPage() {
@@ -203,9 +204,16 @@ export default function DashboardPage() {
       <header className="bg-white dark:bg-gray-800 shadow sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-              Macro Journal
-            </h1>
+            <div className="h-6">
+              <Image
+                src="/images/logo.png"
+                alt="Macro Log"
+                width={144}
+                height={32}
+                className="h-6 w-auto dark:invert"
+                priority
+              />
+            </div>
             <div className="flex gap-4">
               <Link
                 href="/history"

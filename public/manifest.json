@@ -1,6 +1,6 @@
 {
-  "name": "Macro Journal - Daily Meal Tracker",
-  "short_name": "Macro Journal",
+  "name": "Macro Log - Daily Meal Tracker",
+  "short_name": "Macro Log",
   "description": "Track your daily meals and macros with AI-powered parsing",
   "start_url": "/",
   "display": "standalone",

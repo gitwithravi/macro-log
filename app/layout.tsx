@@ -5,7 +5,7 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Macro Journal - Daily Meal Tracker",
+  title: "Macro Log - Daily Meal Tracker",
   description: "Track your daily meals and macros with AI-powered parsing",
   manifest: "/manifest.json",
   themeColor: "#000000",
