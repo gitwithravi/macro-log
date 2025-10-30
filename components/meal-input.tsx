@@ -27,7 +27,7 @@ export function MealInput({ onSubmit, loading }: MealInputProps) {
           onChange={(e) => setMealText(e.target.value)}
           placeholder="e.g., 2 eggs, 1 roti, 1 cup dal..."
           rows={2}
-          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none text-sm"
+          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-700 text-gray-900 dark:text-white resize-none text-sm"
           disabled={loading}
         />
       </div>
