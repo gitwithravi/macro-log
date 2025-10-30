@@ -154,9 +154,9 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 pb-[120px] lg:pb-8">
       {/* Header */}
-      <header className="bg-white dark:bg-gray-800 shadow">
+      <header className="bg-white dark:bg-gray-800 shadow sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-between items-center">
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -189,21 +189,13 @@ export default function DashboardPage() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column - Input and Entries */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Meal Input */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 border border-gray-200 dark:border-gray-700">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-                Log a Meal
-              </h2>
-              <MealInput onSubmit={handleMealSubmit} loading={loading} />
-              {error && (
-                <div className="mt-4 p-3 bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-200 rounded-lg text-sm">
-                  {error}
-                </div>
-              )}
-            </div>
+          {/* Mobile: Summary First, Desktop: Right Column */}
+          <div className="lg:col-span-1 lg:order-2">
+            <DailySummary entries={entries} profile={profile} />
+          </div>
 
+          {/* Mobile: Entries Second, Desktop: Left Column */}
+          <div className="lg:col-span-2 lg:order-1 space-y-6">
             {/* Entries List */}
             <div>
               <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
@@ -216,7 +208,7 @@ export default function DashboardPage() {
               ) : entries.length === 0 ? (
                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-8 text-center border border-gray-200 dark:border-gray-700">
                   <p className="text-gray-500 dark:text-gray-400">
-                    No meals logged today. Add your first meal above!
+                    No meals logged today. Add your first meal below!
                   </p>
                 </div>
               ) : (
@@ -232,13 +224,35 @@ export default function DashboardPage() {
               )}
             </div>
           </div>
-
-          {/* Right Column - Summary */}
-          <div className="lg:col-span-1">
-            <DailySummary entries={entries} profile={profile} />
-          </div>
         </div>
       </main>
+
+      {/* Meal Input - Fixed at bottom on mobile, inline on desktop */}
+      <div className="fixed bottom-0 left-0 right-0 lg:hidden bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-2xl z-50">
+        <div className="max-w-7xl mx-auto px-3 py-3">
+          <MealInput onSubmit={handleMealSubmit} loading={loading} />
+          {error && (
+            <div className="mt-2 p-2 bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-200 rounded-lg text-xs">
+              {error}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Desktop Meal Input - Shown only on large screens */}
+      <div className="hidden lg:block max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 border border-gray-200 dark:border-gray-700">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+            Log a Meal
+          </h2>
+          <MealInput onSubmit={handleMealSubmit} loading={loading} />
+          {error && (
+            <div className="mt-4 p-3 bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-200 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
