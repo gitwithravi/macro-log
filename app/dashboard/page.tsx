@@ -8,6 +8,7 @@ import { EntryCard } from "@/components/entry-card";
 import { DailySummary } from "@/components/daily-summary";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { sanitizeInput } from "@/lib/utils/input-sanitizer";
 
 export default function DashboardPage() {
   const [entries, setEntries] = useState<Entry[]>([]);
@@ -75,6 +76,17 @@ export default function DashboardPage() {
     setError(null);
 
     try {
+      // Step 1: Sanitize input (first line of defense)
+      const sanitizationResult = sanitizeInput(text);
+
+      if (sanitizationResult.rejected) {
+        throw new Error(
+          sanitizationResult.reason || "Invalid input. Please enter only food descriptions."
+        );
+      }
+
+      const sanitizedText = sanitizationResult.sanitized;
+
       // Get the access token from the current session
       const {
         data: { session },
@@ -89,26 +101,58 @@ export default function DashboardPage() {
         Authorization: `Bearer ${session.access_token}`,
       };
 
-      // First, parse the meal using OpenAI
+      // Step 2: Validate that input is food-related (second line of defense)
+      const validationResponse = await fetch("/api/validate-food", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ text: sanitizedText }),
+      });
+
+      if (!validationResponse.ok) {
+        throw new Error("Failed to validate input");
+      }
+
+      const validation = await validationResponse.json();
+
+      if (!validation.isFood || validation.confidence < 0.7) {
+        throw new Error(
+          "This doesn't look like food. Please describe a meal or snack (e.g., '2 eggs and toast')."
+        );
+      }
+
+      // Step 3: Parse the meal using OpenAI (third line of defense - hardened prompt)
       const parseResponse = await fetch("/api/parse", {
         method: "POST",
         headers,
-        body: JSON.stringify({ text }),
+        body: JSON.stringify({ text: sanitizedText }),
       });
 
+      const parseResult = await parseResponse.json();
+
       if (!parseResponse.ok) {
+        // Handle error responses from parse API
+        if (parseResult.error === "Invalid input") {
+          throw new Error(
+            parseResult.message || "Unable to parse as food. Please try a different description."
+          );
+        }
+        if (parseResult.error === "Invalid nutrition data") {
+          throw new Error(
+            "Nutrition calculation failed. Please try describing your meal differently."
+          );
+        }
         throw new Error("Failed to parse meal");
       }
 
-      const parsedData = await parseResponse.json();
+      const parsedData = parseResult;
 
-      // Then, save the entry
+      // Step 4: Save the entry (final validation happens server-side via RLS)
       const entryResponse = await fetch("/api/entries", {
         method: "POST",
         headers,
         body: JSON.stringify({
           date: today,
-          raw_text: text,
+          raw_text: text, // Save original text for reference
           parsed_data: parsedData,
         }),
       });
