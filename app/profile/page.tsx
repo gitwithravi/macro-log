@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Profile } from "@/lib/types/database";
 import Link from "next/link";
+import { MacroCalculatorModal } from "@/components/macro-calculator-modal";
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -12,6 +13,7 @@ export default function ProfilePage() {
     type: "success" | "error";
     text: string;
   } | null>(null);
+  const [showCalculator, setShowCalculator] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -87,6 +89,25 @@ export default function ProfilePage() {
     }
   };
 
+  const handleCalculatedMacros = (macros: {
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+  }) => {
+    setFormData({
+      ...formData,
+      daily_goal_calories: macros.calories.toString(),
+      daily_goal_protein: macros.protein.toString(),
+      daily_goal_carbs: macros.carbs.toString(),
+      daily_goal_fat: macros.fat.toString(),
+    });
+    setMessage({
+      type: "success",
+      text: "Macro goals calculated! Review and save to apply.",
+    });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
@@ -151,12 +172,36 @@ export default function ProfilePage() {
             </div>
 
             <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                Daily Macro Goals
-              </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                Set your daily nutrition targets. Leave blank to use defaults.
-              </p>
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    Daily Macro Goals
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    Set your daily nutrition targets. Leave blank to use defaults.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowCalculator(true)}
+                  className="px-4 py-2 bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200 font-semibold rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-800 transition flex items-center gap-2"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                    />
+                  </svg>
+                  Calculate Macro Goals
+                </button>
+              </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Calories */}
@@ -276,6 +321,13 @@ export default function ProfilePage() {
           </form>
         </div>
       </main>
+
+      {/* Macro Calculator Modal */}
+      <MacroCalculatorModal
+        isOpen={showCalculator}
+        onClose={() => setShowCalculator(false)}
+        onCalculate={handleCalculatedMacros}
+      />
     </div>
   );
 }
