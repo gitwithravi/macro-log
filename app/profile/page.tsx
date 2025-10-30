@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Profile } from "@/lib/types/database";
 import Link from "next/link";
 import { MacroCalculatorModal } from "@/components/macro-calculator-modal";
+import { createClient } from "@/lib/supabase/client";
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -14,6 +15,7 @@ export default function ProfilePage() {
     text: string;
   } | null>(null);
   const [showCalculator, setShowCalculator] = useState(false);
+  const supabase = createClient();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -29,7 +31,17 @@ export default function ProfilePage() {
 
   const fetchProfile = async () => {
     try {
-      const response = await fetch("/api/profile");
+      // Get the access token from the current session
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      const headers: Record<string, string> = {};
+      if (session?.access_token) {
+        headers.Authorization = `Bearer ${session.access_token}`;
+      }
+
+      const response = await fetch("/api/profile", { headers });
       const data = await response.json();
       if (data.profile) {
         setProfile(data.profile);
@@ -54,9 +66,23 @@ export default function ProfilePage() {
     setMessage(null);
 
     try {
+      // Get the access token from the current session
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) {
+        throw new Error("No active session");
+      }
+
+      const headers = {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      };
+
       const response = await fetch("/api/profile", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({
           name: formData.name || null,
           daily_goal_calories: formData.daily_goal_calories
@@ -75,15 +101,16 @@ export default function ProfilePage() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to update profile");
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to update profile");
       }
 
       const data = await response.json();
       setProfile(data.profile);
       setMessage({ type: "success", text: "Profile updated successfully!" });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating profile:", error);
-      setMessage({ type: "error", text: "Failed to update profile" });
+      setMessage({ type: "error", text: error.message || "Failed to update profile" });
     } finally {
       setSaving(false);
     }
