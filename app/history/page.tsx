@@ -19,20 +19,17 @@ interface DaySummary {
 }
 
 export default function HistoryPage() {
-  const [selectedDate, setSelectedDate] = useState(
-    new Date().toISOString().split("T")[0]
-  );
   const [entries, setEntries] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [dateRange, setDateRange] = useState<"day" | "week">("day");
   const [menuOpen, setMenuOpen] = useState(false);
+  const [expandedDays, setExpandedDays] = useState<Set<string>>(new Set());
   const router = useRouter();
   const supabase = createClient();
 
   useEffect(() => {
     fetchEntries();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDate, dateRange]);
+  }, []);
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -50,18 +47,11 @@ export default function HistoryPage() {
   const fetchEntries = async () => {
     setLoading(true);
     try {
-      let url = "/api/entries";
+      // Fetch last 7 days of data
+      const endDate = new Date();
+      const startDate = subDays(endDate, 6); // Last 7 days including today
 
-      if (dateRange === "day") {
-        url += `?date=${selectedDate}`;
-      } else {
-        const start = startOfWeek(new Date(selectedDate));
-        const end = endOfWeek(new Date(selectedDate));
-        url += `?startDate=${format(start, "yyyy-MM-dd")}&endDate=${format(
-          end,
-          "yyyy-MM-dd"
-        )}`;
-      }
+      const url = `/api/entries?startDate=${format(startDate, "yyyy-MM-dd")}&endDate=${format(endDate, "yyyy-MM-dd")}`;
 
       // Get the access token from the current session
       const {
@@ -118,6 +108,16 @@ export default function HistoryPage() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push("/");
+  };
+
+  const toggleDayExpanded = (date: string) => {
+    const newExpanded = new Set(expandedDays);
+    if (newExpanded.has(date)) {
+      newExpanded.delete(date);
+    } else {
+      newExpanded.add(date);
+    }
+    setExpandedDays(newExpanded);
   };
 
   const groupEntriesByDate = (): DaySummary[] => {
@@ -229,132 +229,128 @@ export default function HistoryPage() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Date Controls */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-6 border border-gray-200 dark:border-gray-700">
-          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-            <div className="flex gap-2">
-              <button
-                onClick={() => setDateRange("day")}
-                className={`px-4 py-2 rounded-lg font-medium transition ${
-                  dateRange === "day"
-                    ? "bg-indigo-600 text-white"
-                    : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
-                }`}
-              >
-                Day
-              </button>
-              <button
-                onClick={() => setDateRange("week")}
-                className={`px-4 py-2 rounded-lg font-medium transition ${
-                  dateRange === "week"
-                    ? "bg-indigo-600 text-white"
-                    : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
-                }`}
-              >
-                Week
-              </button>
-            </div>
-
-            <div className="flex gap-2 items-center">
-              <button
-                onClick={() =>
-                  setSelectedDate(
-                    subDays(
-                      new Date(selectedDate),
-                      dateRange === "week" ? 7 : 1
-                    )
-                      .toISOString()
-                      .split("T")[0]
-                  )
-                }
-                className="p-2 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={1.5}
-                  stroke="currentColor"
-                  className="w-5 h-5"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M15.75 19.5L8.25 12l7.5-7.5"
-                  />
-                </svg>
-              </button>
-
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
-              />
-
-              <button
-                onClick={() =>
-                  setSelectedDate(new Date().toISOString().split("T")[0])
-                }
-                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-              >
-                Today
-              </button>
-            </div>
-          </div>
-        </div>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-4 sm:mb-6">
+          Last 7 Days
+        </h2>
 
         {/* Entries */}
         {loading ? (
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+          <div className="text-center py-8 sm:py-12">
+            <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-indigo-600 mx-auto"></div>
           </div>
         ) : daySummaries.length === 0 ? (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-12 text-center border border-gray-200 dark:border-gray-700">
-            <p className="text-gray-500 dark:text-gray-400 text-lg">
-              No entries found for the selected {dateRange}.
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-8 sm:p-12 text-center border border-gray-200 dark:border-gray-700">
+            <p className="text-gray-500 dark:text-gray-400 text-base sm:text-lg">
+              No entries found for the last 7 days.
             </p>
           </div>
         ) : (
-          <div className="space-y-8">
-            {daySummaries.map((daySummary) => (
-              <div key={daySummary.date} className="space-y-4">
-                {/* Day Header */}
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 border border-gray-200 dark:border-gray-700">
-                  <div className="flex justify-between items-center">
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                      {format(new Date(daySummary.date), "EEEE, MMMM d, yyyy")}
-                    </h3>
-                    <div className="flex gap-4 text-sm">
-                      <span className="text-gray-600 dark:text-gray-400">
-                        <span className="font-semibold text-gray-900 dark:text-white">
-                          {Math.round(daySummary.totalCalories)}
-                        </span>{" "}
-                        cal
-                      </span>
-                      <span className="text-gray-600 dark:text-gray-400">
-                        <span className="font-semibold text-gray-900 dark:text-white">
-                          {Math.round(daySummary.totalProtein)}
-                        </span>
-                        g protein
-                      </span>
+          <div className="space-y-3 sm:space-y-4">
+            {daySummaries.map((daySummary) => {
+              const isExpanded = expandedDays.has(daySummary.date);
+              return (
+                <div key={daySummary.date} className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                  {/* Day Header - Clickable */}
+                  <button
+                    onClick={() => toggleDayExpanded(daySummary.date)}
+                    className="w-full p-4 sm:p-6 text-left hover:bg-gray-50 dark:hover:bg-gray-750 transition"
+                  >
+                    <div className="flex justify-between items-center mb-3 sm:mb-4">
+                      <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
+                        {format(new Date(daySummary.date), "dd/MM/yyyy")}
+                      </h3>
+                      <svg
+                        className={`w-5 h-5 sm:w-6 sm:h-6 text-gray-600 dark:text-gray-300 transition-transform ${
+                          isExpanded ? "rotate-180" : ""
+                        }`}
+                        fill="none"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path d="M19 9l-7 7-7-7" />
+                      </svg>
                     </div>
-                  </div>
-                </div>
 
-                {/* Entries for this day */}
-                <div className="space-y-4 pl-4">
-                  {daySummary.entries.map((entry) => (
-                    <EntryCard
-                      key={entry.id}
-                      entry={entry}
-                      onDelete={handleDeleteEntry}
-                    />
-                  ))}
+                    {/* 4 Macro Summary Cards */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
+                      {/* Calories Card */}
+                      <div className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 p-3 sm:p-4 rounded-lg border border-red-200 dark:border-red-800">
+                        <div className="text-xs sm:text-sm text-red-600 dark:text-red-400 font-medium mb-1">
+                          Calories
+                        </div>
+                        <div className="text-xl sm:text-2xl font-bold text-red-900 dark:text-red-100">
+                          {Math.round(daySummary.totalCalories)}
+                        </div>
+                        <div className="text-xs text-red-600 dark:text-red-400">
+                          kcal
+                        </div>
+                      </div>
+
+                      {/* Protein Card */}
+                      <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 p-3 sm:p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                        <div className="text-xs sm:text-sm text-blue-600 dark:text-blue-400 font-medium mb-1">
+                          Protein
+                        </div>
+                        <div className="text-xl sm:text-2xl font-bold text-blue-900 dark:text-blue-100">
+                          {Math.round(daySummary.totalProtein)}
+                        </div>
+                        <div className="text-xs text-blue-600 dark:text-blue-400">
+                          grams
+                        </div>
+                      </div>
+
+                      {/* Carbs Card */}
+                      <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20 p-3 sm:p-4 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                        <div className="text-xs sm:text-sm text-yellow-600 dark:text-yellow-400 font-medium mb-1">
+                          Carbs
+                        </div>
+                        <div className="text-xl sm:text-2xl font-bold text-yellow-900 dark:text-yellow-100">
+                          {Math.round(daySummary.totalCarbs)}
+                        </div>
+                        <div className="text-xs text-yellow-600 dark:text-yellow-400">
+                          grams
+                        </div>
+                      </div>
+
+                      {/* Fat Card */}
+                      <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 p-3 sm:p-4 rounded-lg border border-green-200 dark:border-green-800">
+                        <div className="text-xs sm:text-sm text-green-600 dark:text-green-400 font-medium mb-1">
+                          Fat
+                        </div>
+                        <div className="text-xl sm:text-2xl font-bold text-green-900 dark:text-green-100">
+                          {Math.round(daySummary.totalFat)}
+                        </div>
+                        <div className="text-xs text-green-600 dark:text-green-400">
+                          grams
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+
+                  {/* Expandable Entries Details */}
+                  {isExpanded && (
+                    <div className="border-t border-gray-200 dark:border-gray-700 p-4 sm:p-6 bg-gray-50 dark:bg-gray-900/50">
+                      <h4 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">
+                        Meal Details
+                      </h4>
+                      <div className="space-y-3 sm:space-y-4">
+                        {daySummary.entries.map((entry) => (
+                          <EntryCard
+                            key={entry.id}
+                            entry={entry}
+                            onDelete={handleDeleteEntry}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </main>
