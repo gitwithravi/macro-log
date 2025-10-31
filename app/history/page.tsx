@@ -63,7 +63,17 @@ export default function HistoryPage() {
         )}`;
       }
 
-      const response = await fetch(url);
+      // Get the access token from the current session
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      const headers: Record<string, string> = {};
+      if (session?.access_token) {
+        headers.Authorization = `Bearer ${session.access_token}`;
+      }
+
+      const response = await fetch(url, { headers });
       const data = await response.json();
       if (data.entries) {
         setEntries(data.entries);
@@ -79,8 +89,19 @@ export default function HistoryPage() {
     if (!confirm("Are you sure you want to delete this entry?")) return;
 
     try {
+      // Get the access token from the current session
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      const headers: Record<string, string> = {};
+      if (session?.access_token) {
+        headers.Authorization = `Bearer ${session.access_token}`;
+      }
+
       const response = await fetch(`/api/entries?id=${id}`, {
         method: "DELETE",
+        headers,
       });
 
       if (!response.ok) {
